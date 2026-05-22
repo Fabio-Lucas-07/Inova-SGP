@@ -7,7 +7,7 @@ import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import './Calendario.css'
 import { Button } from '../ui/button'
-import { FileText, Plus } from 'lucide-react'
+import { FileText, Plus, Edit3, Trash2 } from 'lucide-react'
 import {
   Dialog,
   DialogClose,
@@ -60,6 +60,11 @@ const Calendario = ({ events, setEvents }) => {
 
   const [dataAtual, setDataAtual] = useState(moment().toDate())
   const [visualizacaoAtual, setVisualizacaoAtual] = useState(Views.MONTH)
+
+  const [isEditing, setIsEditing] = useState(false)
+  const [editDia, setEditDia] = useState('')
+  const [editHorario, setEditHorario] = useState('')
+  const [editDescricao, setEditDescricao] = useState('')
 
   const customEventPropGetter = (event) => {
     return {
@@ -126,14 +131,38 @@ const Calendario = ({ events, setEvents }) => {
 
   const aoClicarNoEvento = (evento) => {
     setEventoSelecionado(evento)
+    setEditDia(moment(evento.start).format('YYYY-MM-DD'))
+    setEditHorario(moment(evento.start).format('HH:mm'))
+    setEditDescricao(evento.desc || '')
+    setIsEditing(false)
     setDialogDetalhes(true)
   }
 
+  const excluirAgendamento = () => {
+    if (eventoSelecionado) {
+      setEvents(events.filter(ev => ev.id !== eventoSelecionado.id))
+      setDialogDetalhes(false)
+    }
+  }
+
+  const salvarEdicao = () => {
+    if (eventoSelecionado) {
+      const dataInicio = moment(`${editDia} ${editHorario}`, 'YYYY-MM-DD HH:mm').toDate()
+      const duracao = moment(eventoSelecionado.end).diff(moment(eventoSelecionado.start))
+      const dataFim = moment(dataInicio).add(duracao, 'milliseconds').toDate()
+
+      const eventosAtualizados = events.map((ev) =>
+        ev.id === eventoSelecionado.id ? { ...ev, start: dataInicio, end: dataFim, desc: editDescricao } : ev
+      )
+      
+      setEvents(eventosAtualizados)
+      setEventoSelecionado({ ...eventoSelecionado, start: dataInicio, end: dataFim, desc: editDescricao })
+      setIsEditing(false)
+    }
+  }
+
   return (
-   
     <div className="w-full">
-      
-      
       <div className='calendar hidden md:flex flex-col h-[calc(100vh-100px)]'>
         <div className='grid grid-cols-2 pb-8 h-20 shrink-0'>
           <h1>Agenda de hoje</h1>
@@ -196,7 +225,6 @@ const Calendario = ({ events, setEvents }) => {
           </div>
         </div>
 
-    
         <div className="flex-1 min-h-0 h-full">
           <DragAndDropCalendar
             localizer={localizer}
@@ -216,8 +244,6 @@ const Calendario = ({ events, setEvents }) => {
         </div>
       </div>
 
-      
-      {/* MOBILE */}
       <div className='md:hidden flex flex-col h-[calc(100vh-100px)]'>
         <Dialog open={dialogMB} onOpenChange={OpenDialogMB}>
           <DialogTrigger asChild>
@@ -275,7 +301,6 @@ const Calendario = ({ events, setEvents }) => {
           </DialogContent>
         </Dialog>
         
-   
         <div className="flex-1 min-h-0 h-full mt-4">
           <DragAndDropCalendar
             localizer={localizer}
@@ -295,7 +320,6 @@ const Calendario = ({ events, setEvents }) => {
       </div>
 
       <Dialog open={dialogDetalhes} onOpenChange={setDialogDetalhes}>
- 
         <DialogContent className="sm:max-w-[425px] bg-[#FDFBF7] border-[#D5B99A]">
           <DialogHeader>
             <DialogTitle className="text-[22px] font-bold text-[#261810] flex items-center gap-2">
@@ -311,37 +335,78 @@ const Calendario = ({ events, setEvents }) => {
                 <p className="text-[18px] font-bold text-[#261810]">{eventoSelecionado.title}</p>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-1">
-                  <span className="text-[14px] font-medium text-[#A67B66]">Data</span>
-                  <p className="text-[16px] font-medium text-[#4A3224]">
-                    {moment(eventoSelecionado.start).format('DD/MM/YYYY')}
-                  </p>
-                </div>
+              {isEditing ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="editDia" className="text-[14px] font-medium text-[#4A3224]">Novo Dia</Label>
+                      <Input id="editDia" type="date" value={editDia} onChange={(e) => setEditDia(e.target.value)} className="bg-white border-[#D5B99A] focus:ring-[#5B2814] text-black" />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="editHorario" className="text-[14px] font-medium text-[#4A3224]">Novo Horário</Label>
+                      <Input id="editHorario" type="time" value={editHorario} onChange={(e) => setEditHorario(e.target.value)} className="bg-white border-[#D5B99A] focus:ring-[#5B2814] text-black" />
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="editDescricao" className="text-[14px] font-medium text-[#4A3224]">Nova Descrição</Label>
+                    <Input id="editDescricao" value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} className="bg-white border-[#D5B99A] focus:ring-[#5B2814] text-black" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-1">
+                      <span className="text-[14px] font-medium text-[#A67B66]">Data</span>
+                      <p className="text-[16px] font-medium text-[#4A3224]">
+                        {moment(eventoSelecionado.start).format('DD/MM/YYYY')}
+                      </p>
+                    </div>
 
-                <div className="grid gap-1">
-                  <span className="text-[14px] font-medium text-[#A67B66]">Horário</span>
-                  <p className="text-[16px] font-medium text-[#4A3224]">
-                    {moment(eventoSelecionado.start).format('HH:mm')} às {moment(eventoSelecionado.end).format('HH:mm')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid gap-1 mt-2">
-                <span className="text-[14px] font-medium text-[#A67B66]">Descrição</span>
-                <p className="p-3 mt-1 bg-white border border-[#D5B99A] text-[#4A3224] rounded-md min-h-[80px] shadow-sm text-[15px]">
-                  {eventoSelecionado.desc ? eventoSelecionado.desc : 'Nenhuma descrição fornecida.'}
-                </p>
-              </div>
+                    <div className="grid gap-1">
+                      <span className="text-[14px] font-medium text-[#A67B66]">Horário</span>
+                      <p className="text-[16px] font-medium text-[#4A3224]">
+                        {moment(eventoSelecionado.start).format('HH:mm')} às {moment(eventoSelecionado.end).format('HH:mm')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid gap-1 mt-2">
+                    <span className="text-[14px] font-medium text-[#A67B66]">Descrição</span>
+                    <p className="p-3 mt-1 bg-white border border-[#D5B99A] text-[#4A3224] rounded-md min-h-[80px] shadow-sm text-[15px]">
+                      {eventoSelecionado.desc ? eventoSelecionado.desc : 'Nenhuma descrição fornecida.'}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
-          <DialogFooter className="mt-2">
-            <DialogClose asChild>
-              <Button type="button" className="bg-[#5B2814] hover:bg-[#4A2010] text-[#F1E1CA] cursor-pointer w-full sm:w-auto">
-                Fechar
-              </Button>
-            </DialogClose>
+          <DialogFooter className="mt-2 flex sm:justify-between items-center w-full gap-2">
+            {isEditing ? (
+              <div className="flex justify-end gap-2 w-full">
+                <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} className="text-[#7A4B3A] hover:bg-[#FAF5EE] cursor-pointer">
+                  Cancelar
+                </Button>
+                <Button onClick={salvarEdicao} className="bg-[#5B2814] hover:bg-[#4A2010] text-[#F1E1CA] cursor-pointer">
+                  Salvar Alterações
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col-reverse sm:flex-row justify-between w-full gap-3">
+                <Button type="button" variant="ghost" onClick={excluirAgendamento} className="text-red-600 hover:bg-red-50 hover:text-red-700 cursor-pointer w-full sm:w-auto">
+                  <Trash2 size={16} className="mr-2" /> Excluir
+                </Button>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <Button type="button" variant="outline" onClick={() => setIsEditing(true)} className="border-[#D5B99A] text-[#5B2814] hover:bg-[#FAF5EE] cursor-pointer w-full sm:w-auto">
+                    <Edit3 size={16} className="mr-2" /> Editar Consulta
+                  </Button>
+                  <DialogClose asChild>
+                    <Button type="button" className="bg-[#5B2814] hover:bg-[#4A2010] text-[#F1E1CA] cursor-pointer w-full sm:w-auto">
+                      Fechar
+                    </Button>
+                  </DialogClose>
+                </div>
+              </div>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
