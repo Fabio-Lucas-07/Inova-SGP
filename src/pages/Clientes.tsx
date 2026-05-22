@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Search, Plus, User, Phone, Mail, Edit3, Trash2, MapPin, Calendar as CalendarIcon, UserPlus } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 
 const clientesMock = [
   { id: 1, nome: 'João da Silva', email: 'joao.silva@email.com', telefone: '(11) 98765-4321', dataNasc: '15/04/1985', cidade: 'São Paulo, SP' },
@@ -24,21 +24,28 @@ const Clientes = () => {
   const [clientes, setClientes] = useState(clientesMock)
   const [busca, setBusca] = useState('')
   
-  
   const [modalEditarAberto, setModalEditarAberto] = useState(false)
   const [clienteEditando, setClienteEditando] = useState(null)
 
- 
   const [modalNovoAberto, setModalNovoAberto] = useState(false)
   const [novoCliente, setNovoCliente] = useState(estadoInicialNovoCliente)
 
-  const removerCliente = (id) => {
-    if (window.confirm("Tem certeza que deseja remover este cliente?")) {
-      const novaLista = clientes.filter((cliente) => cliente.id !== id)
-      setClientes(novaLista)
-    }
+  const [modalExclusaoAberto, setModalExclusaoAberto] = useState(false)
+  const [clienteParaRemover, setClienteParaRemover] = useState(null)
+
+  const confirmarExclusao = (cliente) => {
+    setClienteParaRemover(cliente)
+    setModalExclusaoAberto(true)
   }
 
+  const removerCliente = () => {
+    if (clienteParaRemover) {
+      const novaLista = clientes.filter((cliente) => cliente.id !== clienteParaRemover.id)
+      setClientes(novaLista)
+      setModalExclusaoAberto(false)
+      setClienteParaRemover(null)
+    }
+  }
 
   const abrirModalEditar = (cliente) => {
     setClienteEditando({ ...cliente }) 
@@ -59,7 +66,6 @@ const Clientes = () => {
     setClienteEditando(null)
   }
 
- 
   const abrirModalNovo = () => {
     setNovoCliente(estadoInicialNovoCliente)
     setModalNovoAberto(true)
@@ -74,13 +80,11 @@ const Clientes = () => {
   }
 
   const salvarNovoCliente = () => {
-    
     if (!novoCliente.nome.trim()) {
       alert("O nome do cliente é obrigatório.")
       return
     }
 
-    // Gera um novo ID baseado no maior ID existente (ou 1 se a lista estiver vazia)
     const novoId = clientes.length > 0 ? Math.max(...clientes.map(c => c.id)) + 1 : 1
     
     const clienteParaAdicionar = {
@@ -99,7 +103,6 @@ const Clientes = () => {
 
   return (
     <div className='w-full min-h-screen flex flex-col bg-[#FDFBF7]'>
-      
       
       <div className='bg-gradient-to-r from-[#F1E1CA] to-[#DFC4A4] h-auto w-full p-6 shadow-sm border-b border-[#D5B99A]/30 flex flex-col md:flex-row justify-between md:items-center gap-4'>
         <div>
@@ -131,7 +134,6 @@ const Clientes = () => {
         </div>
       </div>
 
-      
       <div className='p-8 flex-1'>
         <div className='max-w-[1200px] mx-auto'>
           
@@ -195,7 +197,7 @@ const Clientes = () => {
                         variant="ghost" 
                         size="icon" 
                         className="h-8 w-8 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-md cursor-pointer"
-                        onClick={() => removerCliente(cliente.id)}
+                        onClick={() => confirmarExclusao(cliente)}
                       >
                         <Trash2 size={18} />
                       </Button>
@@ -216,7 +218,6 @@ const Clientes = () => {
         </div>
       </div>
 
-     
       <Dialog open={modalEditarAberto} onOpenChange={setModalEditarAberto}>
         <DialogContent className="sm:max-w-[425px] bg-[#FDFBF7] border-[#D5B99A]">
           <DialogHeader>
@@ -297,7 +298,6 @@ const Clientes = () => {
         </DialogContent>
       </Dialog>
 
-      
       <Dialog open={modalNovoAberto} onOpenChange={setModalNovoAberto}>
         <DialogContent className="sm:max-w-[425px] bg-[#FDFBF7] border-[#D5B99A]">
           <DialogHeader>
@@ -378,6 +378,33 @@ const Clientes = () => {
               Adicionar Cliente
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modalExclusaoAberto} onOpenChange={setModalExclusaoAberto}>
+        <DialogContent className="max-w-md bg-[#FDFBF7] text-[#261810]">
+          <DialogHeader>
+            <DialogTitle className="text-[20px] font-bold text-red-600">Confirmar Exclusão</DialogTitle>
+            <DialogDescription className="text-[#4A3224] mt-2">
+              Tem certeza que deseja remover o cliente <span className="font-bold">{clienteParaRemover?.nome}</span>? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex justify-end gap-3 mt-4">
+            <Button 
+              variant="outline" 
+              className="border-[#D5B99A] text-[#7A4B3A] hover:bg-[#FAF5EE] cursor-pointer"
+              onClick={() => setModalExclusaoAberto(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-red-600 hover:bg-red-700 text-white cursor-pointer shadow-sm"
+              onClick={removerCliente}
+            >
+              Remover Cliente
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import Logo from '../assets/Logo.png'
 
 import {
   AlertDialog,
@@ -26,16 +27,12 @@ const Navbar = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
 
-
   const navLinks = [
     { to: "/home", label: "Início" },
     { to: "/clientes", label: "Meus Clientes" },
     { to: "/prontuarios", label: "Prontuários" },
   ];
 
-
-  
- 
   const getPageTitle = () => {
     const current = navLinks.find(link => link.to === location.pathname);
     return current ? current.label : "Dashboard";
@@ -43,10 +40,18 @@ const Navbar = () => {
 
   return (
     <>
-     
+      {/* DESKTOP */}
       <div className='hidden md:flex sticky top-0 z-50 w-full h-15 bg-[#261810] items-center px-6 text-white shadow-md'>
         <div className='grid grid-cols-3 w-full items-center'>
-          <h1 className='font-bold text-lg'>Sistema Gerenciamento de Prontuários</h1>
+          
+          
+          <h1 className='flex items-center gap-3 font-bold text-lg'>
+            <img 
+              src={Logo} 
+              alt="Logo do Sistema" 
+              className="h-10 w-auto object-contain" 
+            /> 
+          </h1>
           
           <ul className='flex gap-4 justify-center'>
             {navLinks.map((link) => (
@@ -86,25 +91,28 @@ const Navbar = () => {
         </div>
       </div>
 
-
       {/* MOBILE */}
       <div className="md:hidden">
-     
-        <header className="bg-[#261810] px-4 h-16 flex items-center justify-between fixed top-0 w-full z-[60] shadow-sm text-white">
+        <header className="bg-[#261810] px-4 h-16 flex items-center grid grid-cols-[1fr_1fr_1fr] place-items-center fixed top-0 w-full z-[60] shadow-sm text-white">
           <Button
             variant="ghost"
             size="icon"
-            className="hover:bg-white/10 text-white"
+            className="hover:bg-white/10 text-white mr-auto"
             onClick={() => setIsOpen(!isOpen)}
           >
             {isOpen ? <X size={28} /> : <Menu size={28} />}
           </Button>
 
-          <span className="font-bold text-lg">{getPageTitle()}</span>
-          <div className="w-10" /> 
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-lg">{getPageTitle()}</span>
+          </div>
+          
+    
+          <div className="ml-auto">
+             <img src={Logo} alt="Logo" className='h-10 w-auto' />
+          </div> 
         </header>
 
-    
         <AnimatePresence>
           {isOpen && (
             <motion.div

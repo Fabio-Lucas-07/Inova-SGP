@@ -3,6 +3,7 @@ import { Card, CardHeader } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { Button } from '../components/ui/button'
 import { useNavigate } from 'react-router-dom'
+import Logo from '../assets/Logo.png'
 
 const Login = () => {
   const [login, setLogin] = useState('')
@@ -21,8 +22,9 @@ const Login = () => {
   return (
     <div className='h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-[#DFC4A4] to-[#cba377] p-4'>
       <Card className='bg-[#261810] border-none shadow-2xl rounded-2xl w-full max-w-md p-8 sm:p-10 flex flex-col gap-6'>
-        <CardHeader className='p-0 mb-2'>
-          <h1 className='text-[#DFC4A4] text-3xl font-bold text-center tracking-wide'>
+        <CardHeader className='  mb-2 items-center justify-center'>
+        <img src={Logo} alt="" className='h-20 mx-auto' />
+          <h1 className='text-[#DFC4A4] text-3xl font-bold text-center '>
             Bem-vindo
           </h1>
           <p className='text-gray-400 text-sm text-center mt-1'>

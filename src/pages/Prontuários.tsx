@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 import moment from 'moment'
-import { Button } from '@/components/ui/button' // Ajustado para o path padrão do shadcn
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, FileText, Calendar as CalendarIcon, User, Plus } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Search, FileText, Calendar as CalendarIcon, User, Plus, Trash2 } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import {
   Select,
   SelectContent,
@@ -33,6 +33,9 @@ const Prontuarios = () => {
   const [evolucoesGlobais, setEvolucoesGlobais] = useState(evolucoesIniciais)
   const [adicionandoEvolucao, setAdicionandoEvolucao] = useState(false)
   const [textoNovaEvolucao, setTextoNovaEvolucao] = useState('')
+  
+  const [modalExclusaoAberto, setModalExclusaoAberto] = useState(false)
+  const [pacienteParaRemover, setPacienteParaRemover] = useState(null)
 
   const prontuariosFiltrados = prontuarios.filter((paciente) =>
     paciente.nome.toLowerCase().includes(busca.toLowerCase())
@@ -42,6 +45,20 @@ const Prontuarios = () => {
     setPacienteSelecionado(paciente)
     setAdicionandoEvolucao(false) 
     setModalAberto(true)
+  }
+
+  const confirmarExclusao = (paciente) => {
+    setPacienteParaRemover(paciente)
+    setModalExclusaoAberto(true)
+  }
+
+  const removerProntuario = () => {
+    if (pacienteParaRemover) {
+      setProntuarios(prev => prev.filter(p => p.id !== pacienteParaRemover.id))
+      setEvolucoesGlobais(prev => prev.filter(e => e.pacienteId !== pacienteParaRemover.id))
+      setModalExclusaoAberto(false)
+      setPacienteParaRemover(null)
+    }
   }
 
   const salvarNovaEvolucao = () => {
@@ -138,14 +155,12 @@ const Prontuarios = () => {
                       </div>
                       
                       <div className="flex items-center justify-between mt-2">
-                        
-                    
                         <Select 
                           value={paciente.status} 
                           onValueChange={(value) => alterarStatusPaciente(paciente.id, value)}
                         >
                           <SelectTrigger 
-                            className={`h-7 px-3 py-1 rounded-full text-[12px] font-bold border-none shadow-none focus:ring-0 focus:ring-offset-0 w-[140px] ${
+                            className={`h-7 px-3 py-1 rounded-full text-[12px] font-bold border-none shadow-none focus:ring-0 focus:ring-offset-0 w-[130px] ${
                               paciente.status === 'Alta' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 
                               paciente.status === 'Em Tratamento' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 
                               'bg-[#F1E1CA] text-[#5B2814] hover:bg-[#e6d3ba]'
@@ -154,7 +169,6 @@ const Prontuarios = () => {
                             <SelectValue placeholder="Status" />
                           </SelectTrigger>
                           <SelectContent className="bg-white border-[#D5B99A]">
-
                             <SelectItem value="Em Tratamento" className="focus:bg-blue-50 focus:text-blue-700 cursor-pointer">
                               Em Tratamento
                             </SelectItem>
@@ -164,14 +178,23 @@ const Prontuarios = () => {
                           </SelectContent>
                         </Select>
 
-                        <Button 
-                          variant="ghost" 
-                          className="text-[#5B2814] hover:bg-[#FAF5EE] p-2 h-auto rounded-md flex gap-2 items-center text-[13px] font-semibold cursor-pointer"
-                          onClick={() => abrirProntuario(paciente)} 
-                        >
-                          <FileText size={16} />
-                          Abrir
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button 
+                            variant="ghost" 
+                            className="text-[#5B2814] hover:bg-[#FAF5EE] p-2 h-auto rounded-md flex gap-2 items-center text-[13px] font-semibold cursor-pointer"
+                            onClick={() => abrirProntuario(paciente)} 
+                          >
+                            <FileText size={16} />
+                            Abrir
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            className="text-red-500 hover:bg-red-50 hover:text-red-700 p-2 h-auto rounded-md flex items-center cursor-pointer"
+                            onClick={() => confirmarExclusao(paciente)} 
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
@@ -267,6 +290,33 @@ const Prontuarios = () => {
             </>
           )}
 
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modalExclusaoAberto} onOpenChange={setModalExclusaoAberto}>
+        <DialogContent className="max-w-md bg-[#FDFBF7] text-[#261810]">
+          <DialogHeader>
+            <DialogTitle className="text-[20px] font-bold text-red-600">Confirmar Exclusão</DialogTitle>
+            <DialogDescription className="text-[#4A3224] mt-2">
+              Tem certeza que deseja remover o prontuário de <span className="font-bold">{pacienteParaRemover?.nome}</span>? Esta ação não pode ser desfeita e todas as evoluções serão apagadas.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex justify-end gap-3 mt-4">
+            <Button 
+              variant="outline" 
+              className="border-[#D5B99A] text-[#7A4B3A] hover:bg-[#FAF5EE] cursor-pointer"
+              onClick={() => setModalExclusaoAberto(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-red-600 hover:bg-red-700 text-white cursor-pointer shadow-sm"
+              onClick={removerProntuario}
+            >
+              Remover Prontuário
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

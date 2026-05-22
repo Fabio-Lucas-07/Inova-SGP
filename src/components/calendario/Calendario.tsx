@@ -61,7 +61,6 @@ const Calendario = ({ events, setEvents }) => {
   const [dataAtual, setDataAtual] = useState(moment().toDate())
   const [visualizacaoAtual, setVisualizacaoAtual] = useState(Views.MONTH)
 
-  // Função para aplicar a cor marrom escuro customizada nos cards do calendário
   const customEventPropGetter = (event) => {
     return {
       style: {
@@ -96,7 +95,7 @@ const Calendario = ({ events, setEvents }) => {
         start: dataInicio,
         end: dataFim,
         desc: descricao,
-        color: 'marrom', // Identificador alterado
+        color: 'marrom',
         tipo: 'Novo Agendamento'
       };
 
@@ -131,10 +130,12 @@ const Calendario = ({ events, setEvents }) => {
   }
 
   return (
-    <div>
+   
+    <div className="w-full">
       
-      <div className='calendar hidden md:block'>
-        <div className='grid grid-cols-2 pb-8 h-20'>
+      
+      <div className='calendar hidden md:flex flex-col h-[calc(100vh-100px)]'>
+        <div className='grid grid-cols-2 pb-8 h-20 shrink-0'>
           <h1>Agenda de hoje</h1>
           <div className='flex justify-end '>
             <Dialog open={dialog} onOpenChange={OpenDialog}>
@@ -195,7 +196,8 @@ const Calendario = ({ events, setEvents }) => {
           </div>
         </div>
 
-        <div style={{ height: '70vh' }}>
+    
+        <div className="flex-1 min-h-0 h-full">
           <DragAndDropCalendar
             localizer={localizer}
             events={events}
@@ -215,7 +217,8 @@ const Calendario = ({ events, setEvents }) => {
       </div>
 
       
-      <div className='md:hidden'>
+      {/* MOBILE */}
+      <div className='md:hidden flex flex-col h-[calc(100vh-100px)]'>
         <Dialog open={dialogMB} onOpenChange={OpenDialogMB}>
           <DialogTrigger asChild>
             <Button className='fixed bottom-8 right-8 z-50 bg-[#5B2814] rounded-full h-14 w-14 p-4 text-[20px] text-[#F1E1CA] hover:bg-[#4A2010] cursor-pointer shadow-lg transition-all'>
@@ -272,7 +275,8 @@ const Calendario = ({ events, setEvents }) => {
           </DialogContent>
         </Dialog>
         
-        <div style={{ height: '80vh', marginTop: '20px' }}>
+   
+        <div className="flex-1 min-h-0 h-full mt-4">
           <DragAndDropCalendar
             localizer={localizer}
             events={events}
@@ -290,8 +294,8 @@ const Calendario = ({ events, setEvents }) => {
         </div>
       </div>
 
-      
       <Dialog open={dialogDetalhes} onOpenChange={setDialogDetalhes}>
+ 
         <DialogContent className="sm:max-w-[425px] bg-[#FDFBF7] border-[#D5B99A]">
           <DialogHeader>
             <DialogTitle className="text-[22px] font-bold text-[#261810] flex items-center gap-2">
