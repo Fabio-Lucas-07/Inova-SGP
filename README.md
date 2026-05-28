@@ -40,7 +40,7 @@ git clone [https://github.com/seu-usuario/sgp.git](https://github.com/seu-usuari
 
 2. Entrar na pasta do projeto:
 ```bash
-cd sgp
+cd Inova---SGP
 ```
 
 3. Instalar as dependências:
