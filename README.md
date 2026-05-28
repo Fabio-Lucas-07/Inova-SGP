@@ -1,73 +1,38 @@
-# React + TypeScript + Vite
+# 🧠 SGP - Sistema de Gerenciamento de Prontuários
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Uma aplicação web moderna desenvolvida especificamente para **psicólogos autônomos**, focada em otimizar e simplificar a gestão de pacientes, prontuários clínicos e agendamentos.
 
-Currently, two official plugins are available:
+## 🎯 Sobre o Projeto
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+O SGP nasceu da necessidade de proporcionar aos profissionais de psicologia uma ferramenta centralizada e eficaz para o seu dia a dia. Com uma interface limpa e intuitiva, o sistema permite que o profissional foque no que realmente importa: o atendimento ao paciente. 
 
-## React Compiler
+A aplicação facilita desde o primeiro cadastro do cliente até o acompanhamento contínuo através de prontuários organizados e um calendário interativo de sessões.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ Principais Funcionalidades
 
-## Expanding the ESLint configuration
+* **👥 Gestão de Pacientes:** Cadastro completo, visualização e listagem detalhada de todos os clientes atendidos.
+* **📝 Controle de Prontuários:** Criação, edição e armazenamento seguro e organizado do histórico clínico de cada paciente.
+* **📅 Agendamento de Consultas:** Calendário interativo para marcação de sessões, controle de horários e visualização da agenda diária/semanal.
+* **🎨 Interface Otimizada:** Design minimalista e responsivo, focado na produtividade e facilidade de uso.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🛠️ Tecnologias Utilizadas
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Este projeto foi construído utilizando as seguintes tecnologias:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+* **React** - Biblioteca para a construção da interface de usuário.
+* **TypeScript** - Superconjunto de JavaScript com tipagem estática.
+* **Tailwind CSS** - Framework CSS utilitário para estilização rápida.
+* **shadcn/ui** - Componentes de interface acessíveis e reutilizáveis.
+* **react-big-calendar** - Biblioteca para a implementação do calendário de agendamentos.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🚀 Como Executar o Projeto
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Pré-requisitos
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Antes de começar, é necessário ter o **Node.js** instalado na máquina.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Passos para rodar localmente
+
+1. Clonar o repositório:
+```bash
+git clone [https://github.com/seu-usuario/sgp.git](https://github.com/seu-usuario/sgp.git)
