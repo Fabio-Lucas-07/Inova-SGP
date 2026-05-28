@@ -36,3 +36,25 @@ Antes de começar, é necessário ter o **Node.js** instalado na máquina.
 1. Clonar o repositório:
 ```bash
 git clone [https://github.com/seu-usuario/sgp.git](https://github.com/seu-usuario/sgp.git)
+```
+
+2. Entrar na pasta do projeto:
+```bash
+cd sgp
+```
+
+3. Instalar as dependências:
+```bash
+npm install
+```
+
+4. Iniciar o servidor de desenvolvimento:
+```bash
+npm run dev
+```
+
+5. O servidor iniciará localmente. Basta acessar o endereço fornecido no terminal (geralmente `http://localhost:5173` ou `http://localhost:3000`) no navegador.
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
