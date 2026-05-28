@@ -55,6 +55,4 @@ npm run dev
 
 5. O servidor iniciará localmente. Basta acessar o endereço fornecido no terminal (geralmente `http://localhost:5173` ou `http://localhost:3000`) no navegador.
 
-## 📝 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+obs:código sem iplementação de API
