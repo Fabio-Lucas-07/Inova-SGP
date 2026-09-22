@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import moment from 'moment'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -12,37 +12,85 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { prontuarioService, evolucaoService, type Prontuario, type Evolucao } from '@/services'
+import Pagination from '@/components/Pagination'
+import { useDebounce } from '@/hooks/useDebounce'
 
-const prontuariosMock = [
-  { id: 1, nome: 'João da Silva', ultimaConsulta: '2026-05-01', telefone: '(11) 98765-4321', status: 'Em Tratamento' },
-  { id: 2, nome: 'Maria Oliveira', ultimaConsulta: '2026-04-28', telefone: '(11) 91234-5678', status: 'Em Tratamento' },
-  { id: 3, nome: 'Carlos Eduardo Souza', ultimaConsulta: '2026-05-05', telefone: '(11) 99999-1111', status: 'Em Tratamento' },
-  { id: 4, nome: 'Ana Beatriz Alves', ultimaConsulta: '2026-03-15', telefone: '(11) 98888-2222', status: 'Alta' },
-]
-
-const evolucoesIniciais = [
-  { id: 101, pacienteId: 1, data: '2026-05-01', sessao: 'Sessão 02', descricao: 'Paciente relatou melhora. Realizamos exercícios e liberação miofascial.' },
-  { id: 102, pacienteId: 1, data: '2026-04-24', sessao: 'Sessão 01 - Avaliação', descricao: 'Primeira consulta. Feita a anamnese completa. Dores na região lombar.' }
-]
+const ITENS_POR_PAGINA = 9
+const EVOLUCOES_POR_PAGINA = 5
 
 const Prontuarios = () => {
-  const [prontuarios, setProntuarios] = useState(prontuariosMock)
+  const [prontuarios, setProntuarios] = useState<Prontuario[]>([])
   const [busca, setBusca] = useState('')
   const [pacienteSelecionado, setPacienteSelecionado] = useState(null)
   const [modalAberto, setModalAberto] = useState(false)
-  const [evolucoesGlobais, setEvolucoesGlobais] = useState(evolucoesIniciais)
+  const [evolucoes, setEvolucoes] = useState<Evolucao[]>([])
+  const [paginaEvolucoes, setPaginaEvolucoes] = useState(1)
+  const [totalPaginasEvolucoes, setTotalPaginasEvolucoes] = useState(1)
+  const [totalEvolucoes, setTotalEvolucoes] = useState(0)
+  const [recarregarEvolucoes, setRecarregarEvolucoes] = useState(0)
+
+  const buscaDebounced = useDebounce(busca)
+  const [pagina, setPagina] = useState(1)
+  const [totalPaginas, setTotalPaginas] = useState(1)
+  const [totalProntuarios, setTotalProntuarios] = useState(0)
+  const [recarregar, setRecarregar] = useState(0)
   const [adicionandoEvolucao, setAdicionandoEvolucao] = useState(false)
   const [textoNovaEvolucao, setTextoNovaEvolucao] = useState('')
   
   const [modalExclusaoAberto, setModalExclusaoAberto] = useState(false)
   const [pacienteParaRemover, setPacienteParaRemover] = useState(null)
 
-  const prontuariosFiltrados = prontuarios.filter((paciente) =>
-    paciente.nome.toLowerCase().includes(busca.toLowerCase())
-  )
+  useEffect(() => {
+    let cancelado = false
+
+    prontuarioService.listar({ search: buscaDebounced, page: pagina, limit: ITENS_POR_PAGINA })
+      .then((resultado) => {
+        if (cancelado) return
+        if (resultado.content.length === 0 && pagina > 1) {
+          setPagina(Math.max(resultado.totalPages, 1))
+          return
+        }
+        setProntuarios(resultado.content)
+        setTotalPaginas(resultado.totalPages)
+        setTotalProntuarios(resultado.totalCount)
+      })
+      .catch(() => {
+        if (!cancelado) alert("Não foi possível carregar os prontuários.")
+      })
+
+    return () => { cancelado = true }
+  }, [buscaDebounced, pagina, recarregar])
+
+  useEffect(() => {
+    if (!pacienteSelecionado || !modalAberto) return
+    let cancelado = false
+
+    evolucaoService.listar(pacienteSelecionado.id, { page: paginaEvolucoes, limit: EVOLUCOES_POR_PAGINA })
+      .then((resultado) => {
+        if (cancelado) return
+        setEvolucoes(resultado.content)
+        setTotalPaginasEvolucoes(resultado.totalPages)
+        setTotalEvolucoes(resultado.totalCount)
+      })
+      .catch(() => {
+        if (!cancelado) alert("Não foi possível carregar as evoluções do paciente.")
+      })
+
+    return () => { cancelado = true }
+  }, [pacienteSelecionado, modalAberto, paginaEvolucoes, recarregarEvolucoes])
+
+  const alterarBusca = (valor) => {
+    setBusca(valor)
+    setPagina(1)
+  }
 
   const abrirProntuario = (paciente) => {
     setPacienteSelecionado(paciente)
+    setEvolucoes([])
+    setPaginaEvolucoes(1)
+    setTotalPaginasEvolucoes(1)
+    setTotalEvolucoes(0)
     setAdicionandoEvolucao(false) 
     setModalAberto(true)
   }
@@ -52,50 +100,45 @@ const Prontuarios = () => {
     setModalExclusaoAberto(true)
   }
 
-  const removerProntuario = () => {
+  const removerProntuario = async () => {
     if (pacienteParaRemover) {
-      setProntuarios(prev => prev.filter(p => p.id !== pacienteParaRemover.id))
-      setEvolucoesGlobais(prev => prev.filter(e => e.pacienteId !== pacienteParaRemover.id))
-      setModalExclusaoAberto(false)
-      setPacienteParaRemover(null)
+      try {
+        await prontuarioService.remover(pacienteParaRemover.id)
+        setModalExclusaoAberto(false)
+        setPacienteParaRemover(null)
+        setRecarregar((n) => n + 1)
+      } catch {
+        alert("Não foi possível remover o prontuário.")
+      }
     }
   }
 
-  const salvarNovaEvolucao = () => {
+  const salvarNovaEvolucao = async () => {
     if (!textoNovaEvolucao.trim()) {
       alert("A descrição da evolução não pode estar vazia.")
       return
     }
-  
-    const evolucoesDestePaciente = evolucoesGlobais.filter(e => e.pacienteId === pacienteSelecionado.id)
-    const numeroDaSessao = evolucoesDestePaciente.length + 1
-    
-    const novaEvolucao = {
-      id: Date.now(), 
-      pacienteId: pacienteSelecionado.id,
-      data: moment().format('YYYY-MM-DD'), 
-      sessao: `Sessão ${String(numeroDaSessao).padStart(2, '0')}`, 
-      descricao: textoNovaEvolucao
+
+    try {
+      const novaEvolucao = await evolucaoService.criar(pacienteSelecionado.id, textoNovaEvolucao)
+      setProntuarios(prev => prev.map(p => p.id === pacienteSelecionado.id ? { ...p, ultimaConsulta: novaEvolucao.data } : p))
+      setTextoNovaEvolucao('')
+      setAdicionandoEvolucao(false)
+      setPaginaEvolucoes(1)
+      setRecarregarEvolucoes((n) => n + 1)
+    } catch {
+      alert("Não foi possível salvar a evolução.")
     }
-  
-    setEvolucoesGlobais([novaEvolucao, ...evolucoesGlobais])
-    setTextoNovaEvolucao('')
-    setAdicionandoEvolucao(false)
   }
 
-  const alterarStatusPaciente = (pacienteId, novoStatus) => {
-    setProntuarios(prevProntuarios => 
-      prevProntuarios.map(paciente => 
-        paciente.id === pacienteId 
-          ? { ...paciente, status: novoStatus } 
-          : paciente
-      )
-    )
+  const alterarStatusPaciente = async (pacienteId, novoStatus) => {
+    try {
+      const atualizado = await prontuarioService.alterarStatus(pacienteId, novoStatus)
+      setProntuarios(prev => prev.map(p => p.id === pacienteId ? atualizado : p))
+    } catch {
+      alert("Não foi possível alterar o status do paciente.")
+    }
   }
-
-  const evolucoesDoPaciente = pacienteSelecionado 
-    ? evolucoesGlobais.filter(e => e.pacienteId === pacienteSelecionado.id)
-    : []
 
   return (
     <div className='w-full min-h-screen flex flex-col bg-[#FDFBF7]'>
@@ -114,7 +157,7 @@ const Prontuarios = () => {
             type="text" 
             placeholder="Buscar paciente..." 
             value={busca}
-            onChange={(e) => setBusca(e.target.value)}
+            onChange={(e) => alterarBusca(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-white border-[#D5B99A] text-[#261810] placeholder:text-[#A67B66] focus:border-[#5B2814] focus:ring-[#5B2814] rounded-lg shadow-sm"
           />
         </div>
@@ -124,8 +167,8 @@ const Prontuarios = () => {
         <div className='max-w-[1200px] mx-auto'>
           
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-            {prontuariosFiltrados.length > 0 ? (
-              prontuariosFiltrados.map((paciente) => (
+            {prontuarios.length > 0 ? (
+              prontuarios.map((paciente) => (
                 <Card 
                   key={paciente.id} 
                   className='bg-white border-none shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-xl overflow-hidden group border-l-4 border-l-[#5B2814]'
@@ -150,7 +193,7 @@ const Prontuarios = () => {
                       <div className="flex items-center gap-2 text-[#A67B66]">
                         <CalendarIcon size={16} />
                         <span className="text-[13px]">
-                          Última consulta: <span className="font-semibold text-[#4A3224]">{moment(paciente.ultimaConsulta).format('DD/MM/YYYY')}</span>
+                          Última consulta: <span className="font-semibold text-[#4A3224]">{paciente.ultimaConsulta ? moment(paciente.ultimaConsulta).format('DD/MM/YYYY') : '—'}</span>
                         </span>
                       </div>
                       
@@ -210,6 +253,10 @@ const Prontuarios = () => {
             )}
           </div>
 
+          <div className='mt-8'>
+            <Pagination page={pagina} totalPages={totalPaginas} totalCount={totalProntuarios} onPageChange={setPagina} />
+          </div>
+
         </div>
       </div>
 
@@ -229,8 +276,8 @@ const Prontuarios = () => {
 
               <div className="flex-1 overflow-y-auto p-2 py-4 flex flex-col gap-4">
                 
-                {evolucoesDoPaciente.length > 0 ? (
-                  evolucoesDoPaciente.map((evolucao) => (
+                {evolucoes.length > 0 ? (
+                  evolucoes.map((evolucao) => (
                     <div key={evolucao.id} className="bg-white p-4 rounded-lg border-l-4 border-[#5B2814] shadow-sm">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-bold flex items-center gap-2 text-[#4A3224]">
@@ -252,6 +299,12 @@ const Prontuarios = () => {
                 )}
                 
               </div>
+
+              {totalEvolucoes > 0 && (
+                <div className="shrink-0 pb-3">
+                  <Pagination page={paginaEvolucoes} totalPages={totalPaginasEvolucoes} totalCount={totalEvolucoes} onPageChange={setPaginaEvolucoes} compact />
+                </div>
+              )}
 
               <div className="border-t border-[#D5B99A] pt-4 shrink-0 mt-auto">
                 {adicionandoEvolucao ? (

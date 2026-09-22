@@ -1,15 +1,19 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button' 
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Plus, User, Phone, Mail, Edit3, Trash2, MapPin, Calendar as CalendarIcon, UserPlus } from 'lucide-react'
+import { Search, Plus, User, Phone, Mail, Edit3, UserX, UserCheck, MapPin, Calendar as CalendarIcon, UserPlus } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
+import { clienteService, type Cliente, type StatusCliente } from '@/services'
+import Pagination from '@/components/Pagination'
+import { useDebounce } from '@/hooks/useDebounce'
 
-const clientesMock = [
-  { id: 1, nome: 'João da Silva', email: 'joao.silva@email.com', telefone: '(11) 98765-4321', dataNasc: '15/04/1985', cidade: 'São Paulo, SP' },
-  { id: 2, nome: 'Maria Oliveira', email: 'maria.oliveira@email.com', telefone: '(11) 91234-5678', dataNasc: '22/08/1990', cidade: 'Campinas, SP' },
-  { id: 3, nome: 'Carlos Eduardo Souza', email: 'carlos.souza@email.com', telefone: '(11) 99999-1111', dataNasc: '05/11/1978', cidade: 'Belo Horizonte, MG' },
-  { id: 4, nome: 'Ana Beatriz Alves', email: 'ana.beatriz@email.com', telefone: '(11) 98888-2222', dataNasc: '30/01/1995', cidade: 'Rio de Janeiro, RJ' },
+const ITENS_POR_PAGINA = 9
+
+const abas: { valor: StatusCliente, rotulo: string }[] = [
+  { valor: 'active', rotulo: 'Ativos' },
+  { valor: 'inactive', rotulo: 'Inativos' },
+  { valor: 'all', rotulo: 'Todos' },
 ]
 
 const estadoInicialNovoCliente = {
@@ -21,8 +25,14 @@ const estadoInicialNovoCliente = {
 }
 
 const Clientes = () => {
-  const [clientes, setClientes] = useState(clientesMock)
+  const [clientes, setClientes] = useState<Cliente[]>([])
   const [busca, setBusca] = useState('')
+  const buscaDebounced = useDebounce(busca)
+  const [statusFiltro, setStatusFiltro] = useState<StatusCliente>('active')
+  const [pagina, setPagina] = useState(1)
+  const [totalPaginas, setTotalPaginas] = useState(1)
+  const [totalClientes, setTotalClientes] = useState(0)
+  const [recarregar, setRecarregar] = useState(0)
   
   const [modalEditarAberto, setModalEditarAberto] = useState(false)
   const [clienteEditando, setClienteEditando] = useState(null)
@@ -30,20 +40,55 @@ const Clientes = () => {
   const [modalNovoAberto, setModalNovoAberto] = useState(false)
   const [novoCliente, setNovoCliente] = useState(estadoInicialNovoCliente)
 
-  const [modalExclusaoAberto, setModalExclusaoAberto] = useState(false)
-  const [clienteParaRemover, setClienteParaRemover] = useState(null)
+  const [modalStatusAberto, setModalStatusAberto] = useState(false)
+  const [clienteParaAlterar, setClienteParaAlterar] = useState<Cliente | null>(null)
 
-  const confirmarExclusao = (cliente) => {
-    setClienteParaRemover(cliente)
-    setModalExclusaoAberto(true)
+  useEffect(() => {
+    let cancelado = false
+
+    clienteService.listar({ status: statusFiltro, search: buscaDebounced, page: pagina, limit: ITENS_POR_PAGINA })
+      .then((resultado) => {
+        if (cancelado) return
+        if (resultado.content.length === 0 && pagina > 1) {
+          setPagina(Math.max(resultado.totalPages, 1))
+          return
+        }
+        setClientes(resultado.content)
+        setTotalPaginas(resultado.totalPages)
+        setTotalClientes(resultado.totalCount)
+      })
+      .catch(() => {
+        if (!cancelado) alert("Não foi possível carregar os clientes.")
+      })
+
+    return () => { cancelado = true }
+  }, [statusFiltro, buscaDebounced, pagina, recarregar])
+
+  const alterarBusca = (valor) => {
+    setBusca(valor)
+    setPagina(1)
   }
 
-  const removerCliente = () => {
-    if (clienteParaRemover) {
-      const novaLista = clientes.filter((cliente) => cliente.id !== clienteParaRemover.id)
-      setClientes(novaLista)
-      setModalExclusaoAberto(false)
-      setClienteParaRemover(null)
+  const alterarStatusFiltro = (valor: StatusCliente) => {
+    setStatusFiltro(valor)
+    setPagina(1)
+  }
+
+  const confirmarAlteracaoStatus = (cliente) => {
+    setClienteParaAlterar(cliente)
+    setModalStatusAberto(true)
+  }
+
+  const alterarStatusCliente = async () => {
+    if (clienteParaAlterar) {
+      try {
+        await clienteService.alterarStatus(clienteParaAlterar.id, !clienteParaAlterar.isActive)
+        setModalStatusAberto(false)
+        setClienteParaAlterar(null)
+        setRecarregar((n) => n + 1)
+      } catch {
+        alert("Não foi possível alterar o status do cliente.")
+      }
     }
   }
 
@@ -60,10 +105,15 @@ const Clientes = () => {
     }))
   }
 
-  const salvarEdicao = () => {
-    setClientes(clientes.map(c => c.id === clienteEditando.id ? clienteEditando : c))
-    setModalEditarAberto(false)
-    setClienteEditando(null)
+  const salvarEdicao = async () => {
+    try {
+      const atualizado = await clienteService.atualizar(clienteEditando.id, clienteEditando)
+      setClientes(clientes.map(c => c.id === atualizado.id ? atualizado : c))
+      setModalEditarAberto(false)
+      setClienteEditando(null)
+    } catch {
+      alert("Não foi possível salvar as alterações. Verifique os dados (data no formato DD/MM/AAAA).")
+    }
   }
 
   const abrirModalNovo = () => {
@@ -79,27 +129,21 @@ const Clientes = () => {
     }))
   }
 
-  const salvarNovoCliente = () => {
+  const salvarNovoCliente = async () => {
     if (!novoCliente.nome.trim()) {
       alert("O nome do cliente é obrigatório.")
       return
     }
 
-    const novoId = clientes.length > 0 ? Math.max(...clientes.map(c => c.id)) + 1 : 1
-    
-    const clienteParaAdicionar = {
-      ...novoCliente,
-      id: novoId
+    try {
+      await clienteService.criar(novoCliente)
+      setModalNovoAberto(false)
+      setNovoCliente(estadoInicialNovoCliente)
+      setRecarregar((n) => n + 1)
+    } catch {
+      alert("Não foi possível cadastrar o cliente. Verifique os dados (data no formato DD/MM/AAAA).")
     }
-
-    setClientes([...clientes, clienteParaAdicionar])
-    setModalNovoAberto(false)
-    setNovoCliente(estadoInicialNovoCliente)
   }
-
-  const clientesFiltrados = clientes.filter((cliente) =>
-    cliente.nome.toLowerCase().includes(busca.toLowerCase())
-  )
 
   return (
     <div className='w-full min-h-screen flex flex-col bg-[#FDFBF7]'>
@@ -119,7 +163,7 @@ const Clientes = () => {
               type="text" 
               placeholder="Buscar cliente..." 
               value={busca}
-              onChange={(e) => setBusca(e.target.value)}
+              onChange={(e) => alterarBusca(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white border-[#D5B99A] text-[#261810] placeholder:text-[#A67B66] focus:border-[#5B2814] focus:ring-[#5B2814] rounded-lg shadow-sm"
             />
           </div>
@@ -136,13 +180,28 @@ const Clientes = () => {
 
       <div className='p-8 flex-1'>
         <div className='max-w-[1200px] mx-auto'>
+
+          <div className='flex gap-2 mb-6'>
+            {abas.map((aba) => (
+              <Button
+                key={aba.valor}
+                variant={statusFiltro === aba.valor ? 'default' : 'outline'}
+                onClick={() => alterarStatusFiltro(aba.valor)}
+                className={statusFiltro === aba.valor
+                  ? 'bg-[#5B2814] hover:bg-[#4A2010] text-[#F1E1CA] cursor-pointer'
+                  : 'border-[#D5B99A] text-[#7A4B3A] hover:bg-[#FAF5EE] cursor-pointer'}
+              >
+                {aba.rotulo}
+              </Button>
+            ))}
+          </div>
           
           <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'>
-            {clientesFiltrados.length > 0 ? (
-              clientesFiltrados.map((cliente) => (
+            {clientes.length > 0 ? (
+              clientes.map((cliente) => (
                 <Card 
                   key={cliente.id} 
-                  className='bg-white border-none shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-xl overflow-hidden group border-t-4 border-t-[#5B2814]'
+                  className={`bg-white border-none shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-xl overflow-hidden group border-t-4 ${cliente.isActive ? 'border-t-[#5B2814]' : 'border-t-gray-400 opacity-75'}`}
                 >
                   <CardContent className="p-6 flex flex-col h-full justify-between gap-5">
                     
@@ -157,6 +216,9 @@ const Clientes = () => {
                         <span className="text-[13px] font-medium text-[#A67B66] flex items-center gap-1 mt-1">
                           <MapPin size={14} /> {cliente.cidade}
                         </span>
+                        {!cliente.isActive && (
+                          <span className="mt-1 w-fit text-[11px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-500 rounded px-2 py-0.5">Inativo</span>
+                        )}
                       </div>
                     </div>
 
@@ -196,10 +258,13 @@ const Clientes = () => {
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-md cursor-pointer"
-                        onClick={() => confirmarExclusao(cliente)}
+                        title={cliente.isActive ? 'Inativar cliente' : 'Reativar cliente'}
+                        className={cliente.isActive
+                          ? 'h-8 w-8 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-md cursor-pointer'
+                          : 'h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700 rounded-md cursor-pointer'}
+                        onClick={() => confirmarAlteracaoStatus(cliente)}
                       >
-                        <Trash2 size={18} />
+                        {cliente.isActive ? <UserX size={18} /> : <UserCheck size={18} />}
                       </Button>
                     </div>
 
@@ -213,6 +278,10 @@ const Clientes = () => {
                 <p className="text-[14px] text-[#A67B66] mt-1">Verifique a ortografia ou cadastre um novo cliente.</p>
               </div>
             )}
+          </div>
+
+          <div className='mt-8'>
+            <Pagination page={pagina} totalPages={totalPaginas} totalCount={totalClientes} onPageChange={setPagina} />
           </div>
 
         </div>
@@ -381,12 +450,16 @@ const Clientes = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={modalExclusaoAberto} onOpenChange={setModalExclusaoAberto}>
+      <Dialog open={modalStatusAberto} onOpenChange={setModalStatusAberto}>
         <DialogContent className="max-w-md bg-[#FDFBF7] text-[#261810]">
           <DialogHeader>
-            <DialogTitle className="text-[20px] font-bold text-red-600">Confirmar Exclusão</DialogTitle>
+            <DialogTitle className={`text-[20px] font-bold ${clienteParaAlterar?.isActive ? 'text-red-600' : 'text-green-700'}`}>
+              {clienteParaAlterar?.isActive ? 'Inativar Cliente' : 'Reativar Cliente'}
+            </DialogTitle>
             <DialogDescription className="text-[#4A3224] mt-2">
-              Tem certeza que deseja remover o cliente <span className="font-bold">{clienteParaRemover?.nome}</span>? Esta ação não pode ser desfeita.
+              {clienteParaAlterar?.isActive
+                ? <>Deseja inativar o cliente <span className="font-bold">{clienteParaAlterar?.nome}</span>? Os dados e o prontuário serão mantidos, mas ele deixará de aparecer nas listas e nos agendamentos.</>
+                : <>Deseja reativar o cliente <span className="font-bold">{clienteParaAlterar?.nome}</span>?</>}
             </DialogDescription>
           </DialogHeader>
 
@@ -394,15 +467,15 @@ const Clientes = () => {
             <Button 
               variant="outline" 
               className="border-[#D5B99A] text-[#7A4B3A] hover:bg-[#FAF5EE] cursor-pointer"
-              onClick={() => setModalExclusaoAberto(false)}
+              onClick={() => setModalStatusAberto(false)}
             >
               Cancelar
             </Button>
             <Button 
-              className="bg-red-600 hover:bg-red-700 text-white cursor-pointer shadow-sm"
-              onClick={removerCliente}
+              className={`${clienteParaAlterar?.isActive ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white cursor-pointer shadow-sm`}
+              onClick={alterarStatusCliente}
             >
-              Remover Cliente
+              {clienteParaAlterar?.isActive ? 'Inativar' : 'Reativar'}
             </Button>
           </div>
         </DialogContent>

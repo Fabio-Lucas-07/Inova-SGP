@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { agendamentoService, type Cliente } from '@/services'
+import ClienteSelect from './ClienteSelect'
 
 moment.locale('pt-br')
 
@@ -47,7 +49,7 @@ const mensagensCalendario = {
 }
 
 const Calendario = ({ events, setEvents }) => {
-  const [nome, setNome] = useState('')
+  const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null)
   const [dia, setDia] = useState('')
   const [horario, setHorario] = useState('')
   const [descricao, setDescricao] = useState('')
@@ -78,56 +80,55 @@ const Calendario = ({ events, setEvents }) => {
     }
   }
 
-  const agendar = (e) => {
+  const agendar = async (e) => {
     e.preventDefault();
 
-    if (!nome || !dia || !horario) {
-      alert("Preencha o nome, dia e horário!");
+    const cliente = clienteSelecionado;
+
+    if (!cliente || !dia || !horario) {
+      alert("Selecione o cliente, o dia e o horário!");
       return;
     }
 
     const dataInicio = moment(`${dia} ${horario}`, 'YYYY-MM-DD HH:mm').toDate();
     const dataFim = moment(dataInicio).add(1, 'hours').toDate();
 
-    setEvents((eventosAnteriores) => {
-      const proximoId = eventosAnteriores.length > 0
-        ? Math.max(...eventosAnteriores.map(e => e.id)) + 1
-        : 1;
-
-      const novoEvento = {
-        id: proximoId,
-        title: nome,
+    try {
+      const novoEvento = await agendamentoService.criar({
+        clienteId: cliente.id,
+        title: cliente.nome,
         start: dataInicio,
         end: dataFim,
         desc: descricao,
-        color: 'marrom',
         tipo: 'Novo Agendamento'
-      };
+      });
 
-      return [...eventosAnteriores, novoEvento];
-    });
-
-    setNome('');
-    setDia('');
-    setHorario('');
-    setDescricao('');
-    OpenDialog(false);
-    OpenDialogMB(false);
+      setEvents((eventosAnteriores) => [...eventosAnteriores, novoEvento]);
+      setClienteSelecionado(null);
+      setDia('');
+      setHorario('');
+      setDescricao('');
+      OpenDialog(false);
+      OpenDialogMB(false);
+    } catch {
+      alert("Não foi possível criar o agendamento.");
+    }
   }
 
-  const aoMoverEvento = ({ event, start, end }) => {
-    const eventosAtualizados = events.map((ev) =>
-      ev.id === event.id ? { ...ev, start, end } : ev
-    )
-    setEvents(eventosAtualizados)
+  const atualizarEvento = async (evento, campos) => {
+    try {
+      const atualizado = await agendamentoService.atualizar(evento.id, { ...evento, ...campos })
+      setEvents((eventosAnteriores) => eventosAnteriores.map((ev) => ev.id === atualizado.id ? atualizado : ev))
+      return atualizado
+    } catch {
+      alert("Não foi possível atualizar o agendamento.")
+      return null
+    }
   }
 
-  const aoRedimensionarEvento = ({ event, start, end }) => {
-    const eventosAtualizados = events.map((ev) =>
-      ev.id === event.id ? { ...ev, start, end } : ev
-    )
-    setEvents(eventosAtualizados)
-  }
+  const aoMoverEvento = ({ event, start, end }) => atualizarEvento(event, { start, end })
+
+  const aoRedimensionarEvento = ({ event, start, end }) => atualizarEvento(event, { start, end })
 
   const aoClicarNoEvento = (evento) => {
     setEventoSelecionado(evento)
@@ -138,26 +139,29 @@ const Calendario = ({ events, setEvents }) => {
     setDialogDetalhes(true)
   }
 
-  const excluirAgendamento = () => {
+  const excluirAgendamento = async () => {
     if (eventoSelecionado) {
-      setEvents(events.filter(ev => ev.id !== eventoSelecionado.id))
-      setDialogDetalhes(false)
+      try {
+        await agendamentoService.remover(eventoSelecionado.id)
+        setEvents(events.filter(ev => ev.id !== eventoSelecionado.id))
+        setDialogDetalhes(false)
+      } catch {
+        alert("Não foi possível excluir o agendamento.")
+      }
     }
   }
 
-  const salvarEdicao = () => {
+  const salvarEdicao = async () => {
     if (eventoSelecionado) {
       const dataInicio = moment(`${editDia} ${editHorario}`, 'YYYY-MM-DD HH:mm').toDate()
       const duracao = moment(eventoSelecionado.end).diff(moment(eventoSelecionado.start))
       const dataFim = moment(dataInicio).add(duracao, 'milliseconds').toDate()
 
-      const eventosAtualizados = events.map((ev) =>
-        ev.id === eventoSelecionado.id ? { ...ev, start: dataInicio, end: dataFim, desc: editDescricao } : ev
-      )
-      
-      setEvents(eventosAtualizados)
-      setEventoSelecionado({ ...eventoSelecionado, start: dataInicio, end: dataFim, desc: editDescricao })
-      setIsEditing(false)
+      const atualizado = await atualizarEvento(eventoSelecionado, { start: dataInicio, end: dataFim, desc: editDescricao })
+      if (atualizado) {
+        setEventoSelecionado(atualizado)
+        setIsEditing(false)
+      }
     }
   }
 
@@ -188,8 +192,8 @@ const Calendario = ({ events, setEvents }) => {
                   
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="nome" className="text-[14px] font-medium text-[#4A3224]">Nome</Label>
-                      <Input id="nome" onChange={(e) => setNome(e.target.value)} value={nome} placeholder="Ex: Joao da Silva" className="bg-white border-[#D5B99A] focus:ring-[#5B2814] text-black" />
+                      <Label htmlFor="cliente" className="text-[14px] font-medium text-[#4A3224]">Cliente</Label>
+                      <ClienteSelect id="cliente" value={clienteSelecionado} onChange={setClienteSelecionado} />
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
@@ -266,8 +270,8 @@ const Calendario = ({ events, setEvents }) => {
               
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="nomeMB" className="text-[14px] font-medium text-[#4A3224]">Nome</Label>
-                  <Input id="nomeMB" onChange={(e) => setNome(e.target.value)} value={nome} placeholder="Ex: Joao da Silva" className="bg-white border-[#D5B99A] focus:ring-[#5B2814] text-black" />
+                  <Label htmlFor="clienteMB" className="text-[14px] font-medium text-[#4A3224]">Cliente</Label>
+                  <ClienteSelect id="clienteMB" value={clienteSelecionado} onChange={setClienteSelecionado} />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">

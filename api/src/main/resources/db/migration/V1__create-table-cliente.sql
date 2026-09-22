@@ -1,0 +1,8 @@
+CREATE TABLE cliente (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255),
+    tel VARCHAR(30) NOT NULL,
+    birthday DATE NOT NULL,
+    city VARCHAR(255) NOT NULL
+);

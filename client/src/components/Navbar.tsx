@@ -28,7 +28,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const navLinks = [
-    { to: "/home", label: "Início" },
+    { to: "/", label: "Início" },
     { to: "/clientes", label: "Meus Clientes" },
     { to: "/prontuarios", label: "Prontuários" },
   ];

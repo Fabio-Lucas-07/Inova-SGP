@@ -1,51 +1,19 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import moment from 'moment'
 import { Button } from '../components/ui/button'
 import { Card, CardHeader, CardContent } from '../components/ui/card'
 import { Plus } from 'lucide-react'
 import Calendar from '../components/calendario/Calendario.tsx'
-
-const consultasIniciais = [
-  {
-    id: 1,
-    title: 'João da Silva',
-    start: moment().add(1, 'hours').startOf('hour').toDate(), 
-    end: moment().add(2, 'hours').startOf('hour').toDate(),
-    desc: 'Primeira consulta. Avaliação inicial.',
-    color: 'blue',
-    tipo: 'Novo Agendamento'
-  },
-  {
-    id: 2,
-    title: 'Maria Oliveira',
-    start: moment().add(1, 'days').set({ hour: 10, minute: 0 }).toDate(),
-    end: moment().add(1, 'days').set({ hour: 11, minute: 0 }).toDate(),
-    desc: 'Retorno para acompanhamento de rotina.',
-    color: 'blue',
-    tipo: 'Retorno'
-  },
-  {
-    id: 3,
-    title: 'Carlos Eduardo Souza',
-    start: moment().add(2, 'days').set({ hour: 14, minute: 0 }).toDate(),
-    end: moment().add(2, 'days').set({ hour: 15, minute: 0 }).toDate(),
-    desc: 'Sessão semanal de tratamento.',
-    color: 'blue',
-    tipo: 'Em Tratamento'
-  },
-  {
-    id: 4,
-    title: 'Ana Beatriz Alves',
-    start: moment().add(3, 'days').set({ hour: 9, minute: 30 }).toDate(), 
-    end: moment().add(3, 'days').set({ hour: 10, minute: 30 }).toDate(),
-    desc: 'Avaliação de exames solicitados.',
-    color: 'blue',
-    tipo: 'Acompanhamento'
-  }
-];
+import { agendamentoService, type Agendamento } from '../services'
 
 const Home = () => {
-  const [events, setEvents] = useState(consultasIniciais)
+  const [events, setEvents] = useState<Agendamento[]>([])
+
+  useEffect(() => {
+    agendamentoService.listar()
+      .then(setEvents)
+      .catch(() => alert("Não foi possível carregar os agendamentos."))
+  }, [])
 
   const getProximasConsultas = () => {
     const hoje = moment();
