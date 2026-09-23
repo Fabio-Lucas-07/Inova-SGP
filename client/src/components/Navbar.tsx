@@ -31,6 +31,7 @@ const Navbar = () => {
     { to: "/", label: "Início" },
     { to: "/clientes", label: "Meus Clientes" },
     { to: "/prontuarios", label: "Prontuários" },
+    { to: "/vendas", label: "Vendas" },
   ];
 
   const getPageTitle = () => {

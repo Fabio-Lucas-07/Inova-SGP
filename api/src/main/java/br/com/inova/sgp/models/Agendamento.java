@@ -1,5 +1,6 @@
 package br.com.inova.sgp.models;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -46,4 +47,7 @@ public class Agendamento {
 
     @Column(name = "type", nullable = true)
     private String type;
+
+    @Column(name = "valor", nullable = false)
+    private BigDecimal valor;
 }

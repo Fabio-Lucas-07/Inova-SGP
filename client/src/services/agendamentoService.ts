@@ -9,6 +9,7 @@ interface AgendamentoApi {
   endTime: string
   description: string | null
   type: string | null
+  valor: number
 }
 
 // Formato consumido pelo react-big-calendar
@@ -20,6 +21,7 @@ export interface Agendamento {
   end: Date
   desc: string
   tipo: string
+  valor: number
 }
 
 export type AgendamentoForm = Omit<Agendamento, 'id' | 'clienteId'> & { clienteId?: number | null }
@@ -34,6 +36,7 @@ const fromApi = (a: AgendamentoApi): Agendamento => ({
   end: moment(a.endTime).toDate(),
   desc: a.description ?? '',
   tipo: a.type ?? '',
+  valor: a.valor ?? 0,
 })
 
 const toApi = (a: AgendamentoForm) => ({
@@ -43,6 +46,7 @@ const toApi = (a: AgendamentoForm) => ({
   endTime: moment(a.end).format(DATE_TIME),
   description: a.desc,
   type: a.tipo,
+  valor: a.valor ?? 0,
 })
 
 export const agendamentoService = {

@@ -9,6 +9,7 @@ import Navbar from './components/Navbar.tsx'
 import Login from './pages/Login.tsx'
 import Prontuários from './pages/Prontuários.tsx'
 import Clientes from './pages/Clientes.tsx'
+import Vendas from './pages/Vendas.tsx'
 import  Layout  from './components/Layout.tsx'
 import Calendario from './components/calendario/Calendario.tsx'
 import Testes from './pages/Testes.tsx'
@@ -27,6 +28,7 @@ function App() {
           <Route path="/" element={<Home/>}/>
           <Route path="/clientes" element={<Clientes/>}/>
           <Route path="/prontuarios" element={<Prontuários/>}/>
+          <Route path="/vendas" element={<Vendas/>}/>
         </Route>
         <Route path='/teste' element={<Calendario/>}></Route>
         

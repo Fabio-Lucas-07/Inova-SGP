@@ -53,6 +53,7 @@ const Calendario = ({ events, setEvents }) => {
   const [dia, setDia] = useState('')
   const [horario, setHorario] = useState('')
   const [descricao, setDescricao] = useState('')
+  const [valor, setValor] = useState('')
 
   const [dialog, OpenDialog] = useState(false)
   const [dialogMB, OpenDialogMB] = useState(false)
@@ -67,6 +68,10 @@ const Calendario = ({ events, setEvents }) => {
   const [editDia, setEditDia] = useState('')
   const [editHorario, setEditHorario] = useState('')
   const [editDescricao, setEditDescricao] = useState('')
+  const [editValor, setEditValor] = useState('')
+
+  const formatarMoeda = (valor: number) =>
+    valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
   const customEventPropGetter = (event) => {
     return {
@@ -100,7 +105,8 @@ const Calendario = ({ events, setEvents }) => {
         start: dataInicio,
         end: dataFim,
         desc: descricao,
-        tipo: 'Novo Agendamento'
+        tipo: 'Novo Agendamento',
+        valor: Number(valor) || 0
       });
 
       setEvents((eventosAnteriores) => [...eventosAnteriores, novoEvento]);
@@ -108,6 +114,7 @@ const Calendario = ({ events, setEvents }) => {
       setDia('');
       setHorario('');
       setDescricao('');
+      setValor('');
       OpenDialog(false);
       OpenDialogMB(false);
     } catch {
@@ -135,6 +142,7 @@ const Calendario = ({ events, setEvents }) => {
     setEditDia(moment(evento.start).format('YYYY-MM-DD'))
     setEditHorario(moment(evento.start).format('HH:mm'))
     setEditDescricao(evento.desc || '')
+    setEditValor(evento.valor ? String(evento.valor) : '')
     setIsEditing(false)
     setDialogDetalhes(true)
   }
@@ -157,7 +165,7 @@ const Calendario = ({ events, setEvents }) => {
       const duracao = moment(eventoSelecionado.end).diff(moment(eventoSelecionado.start))
       const dataFim = moment(dataInicio).add(duracao, 'milliseconds').toDate()
 
-      const atualizado = await atualizarEvento(eventoSelecionado, { start: dataInicio, end: dataFim, desc: editDescricao })
+      const atualizado = await atualizarEvento(eventoSelecionado, { start: dataInicio, end: dataFim, desc: editDescricao, valor: Number(editValor) || 0 })
       if (atualizado) {
         setEventoSelecionado(atualizado)
         setIsEditing(false)
@@ -210,6 +218,11 @@ const Calendario = ({ events, setEvents }) => {
                     <div className="grid gap-2">
                       <Label htmlFor="descricao" className="text-[14px] font-medium text-[#4A3224]">Descrição</Label>
                       <Input id="descricao" onChange={(e) => setDescricao(e.target.value)} value={descricao} placeholder="Detalhes adicionais..." className="bg-white border-[#D5B99A] focus:ring-[#5B2814] text-black" />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="valor" className="text-[14px] font-medium text-[#4A3224]">Valor da Consulta (R$)</Label>
+                      <Input id="valor" type="number" min="0" step="0.01" onChange={(e) => setValor(e.target.value)} value={valor} placeholder="0,00" className="bg-white border-[#D5B99A] focus:ring-[#5B2814] text-black" />
                     </div>
                   </div>
 
@@ -289,6 +302,11 @@ const Calendario = ({ events, setEvents }) => {
                   <Label htmlFor="descricaoMB" className="text-[14px] font-medium text-[#4A3224]">Descrição</Label>
                   <Input id="descricaoMB" onChange={(e) => setDescricao(e.target.value)} value={descricao} placeholder="Detalhes adicionais..." className="bg-white border-[#D5B99A] focus:ring-[#5B2814] text-black" />
                 </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="valorMB" className="text-[14px] font-medium text-[#4A3224]">Valor da Consulta (R$)</Label>
+                  <Input id="valorMB" type="number" min="0" step="0.01" onChange={(e) => setValor(e.target.value)} value={valor} placeholder="0,00" className="bg-white border-[#D5B99A] focus:ring-[#5B2814] text-black" />
+                </div>
               </div>
 
               <DialogFooter className="mt-2">
@@ -355,6 +373,10 @@ const Calendario = ({ events, setEvents }) => {
                     <Label htmlFor="editDescricao" className="text-[14px] font-medium text-[#4A3224]">Nova Descrição</Label>
                     <Input id="editDescricao" value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} className="bg-white border-[#D5B99A] focus:ring-[#5B2814] text-black" />
                   </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="editValor" className="text-[14px] font-medium text-[#4A3224]">Valor da Consulta (R$)</Label>
+                    <Input id="editValor" type="number" min="0" step="0.01" value={editValor} onChange={(e) => setEditValor(e.target.value)} placeholder="0,00" className="bg-white border-[#D5B99A] focus:ring-[#5B2814] text-black" />
+                  </div>
                 </>
               ) : (
                 <>
@@ -372,6 +394,12 @@ const Calendario = ({ events, setEvents }) => {
                         {moment(eventoSelecionado.start).format('HH:mm')} às {moment(eventoSelecionado.end).format('HH:mm')}
                       </p>
                     </div>
+                  </div>
+                  <div className="grid gap-1">
+                    <span className="text-[14px] font-medium text-[#A67B66]">Valor da Consulta</span>
+                    <p className="text-[16px] font-bold text-[#5B2814]">
+                      {formatarMoeda(eventoSelecionado.valor || 0)}
+                    </p>
                   </div>
                   <div className="grid gap-1 mt-2">
                     <span className="text-[14px] font-medium text-[#A67B66]">Descrição</span>

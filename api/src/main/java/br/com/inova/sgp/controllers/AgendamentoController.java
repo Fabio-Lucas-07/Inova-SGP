@@ -60,6 +60,6 @@ public class AgendamentoController {
     }
 
     private Agendamento toEntity(AgendamentoRequestDTO dto) {
-        return new Agendamento(null, null, dto.name(), dto.startTime(), dto.endTime(), dto.description(), dto.type());
+        return new Agendamento(null, null, dto.name(), dto.startTime(), dto.endTime(), dto.description(), dto.type(), dto.valor());
     }
 }
