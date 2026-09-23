@@ -154,7 +154,7 @@ const GraficoVendas = ({ dias, periodo }: { dias: VendaDia[], periodo: Periodo }
   )
 }
 
-const Vendas = () => {
+const Financeiro = () => {
   const [periodo, setPeriodo] = useState<Periodo>('semanal')
   const [referencia, setReferencia] = useState(moment())
   const [resumo, setResumo] = useState<VendaResumo | null>(null)
@@ -211,7 +211,7 @@ const Vendas = () => {
     <div className='w-full min-h-screen flex flex-col bg-[#FDFBF7]'>
 
       <div className='bg-gradient-to-r from-[#F1E1CA] to-[#DFC4A4] h-auto w-full p-6 shadow-sm border-b border-[#D5B99A]/30'>
-        <h1 className='text-[28px] font-bold text-[#261810] tracking-tight'>Controle de Vendas</h1>
+        <h1 className='text-[28px] font-bold text-[#261810] tracking-tight'>Financeiro</h1>
         <p className='text-[16px] text-[#4A3224] mt-1 font-medium'>
           Acompanhe os valores das consultas realizadas por semana e por mês.
         </p>
@@ -367,4 +367,4 @@ const Vendas = () => {
   )
 }
 
-export default Vendas
+export default Financeiro
