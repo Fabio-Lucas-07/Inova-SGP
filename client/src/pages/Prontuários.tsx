@@ -16,7 +16,7 @@ import { prontuarioService, evolucaoService, type Prontuario, type Evolucao } fr
 import Pagination from '@/components/Pagination'
 import { useDebounce } from '@/hooks/useDebounce'
 
-const ITENS_POR_PAGINA = 9
+const ITENS_POR_PAGINA = 6
 const EVOLUCOES_POR_PAGINA = 5
 
 const Prontuarios = () => {
@@ -141,7 +141,7 @@ const Prontuarios = () => {
   }
 
   return (
-    <div className='w-full min-h-screen flex flex-col bg-[#FDFBF7]'>
+    <div className='w-full  flex flex-col bg-[#FDFBF7]'>
       
       <div className='bg-gradient-to-r from-[#F1E1CA] to-[#DFC4A4] h-auto w-full p-6 shadow-sm border-b border-[#D5B99A]/30 flex justify-between items-center max-[600px]:flex-col max-[600px]:items-start max-[600px]:gap-4'>
         <div>

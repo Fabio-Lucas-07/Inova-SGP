@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button' 
+import moment from 'moment'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, Plus, User, Phone, Mail, Edit3, UserX, UserCheck, MapPin, Calendar as CalendarIcon, UserPlus } from 'lucide-react'
+import { Search, Plus, User, Phone, Mail, Edit3, UserX, UserCheck, MapPin, Calendar as CalendarIcon, UserPlus, IdCard } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { clienteService, type Cliente, type StatusCliente } from '@/services'
 import Pagination from '@/components/Pagination'
 import { useDebounce } from '@/hooks/useDebounce'
+import { maskCpf, maskTelefone, isCpfValido, isTelefoneValido } from '@/lib/masks'
 
-const ITENS_POR_PAGINA = 9
+const ITENS_POR_PAGINA = 6
 
 const abas: { valor: StatusCliente, rotulo: string }[] = [
   { valor: 'active', rotulo: 'Ativos' },
@@ -19,9 +21,23 @@ const abas: { valor: StatusCliente, rotulo: string }[] = [
 const estadoInicialNovoCliente = {
   nome: '',
   email: '',
+  cpf: '',
   telefone: '',
   dataNasc: '',
   cidade: ''
+}
+
+const camposComMascara: Record<string, (valor: string) => string> = {
+  cpf: maskCpf,
+  telefone: maskTelefone,
+}
+
+const validarDadosCliente = (cliente) => {
+  if (!isCpfValido(cliente.cpf)) return "CPF inválido. Verifique os números digitados."
+  if (!isTelefoneValido(cliente.telefone)) return "Telefone inválido. Informe o DDD + número (10 ou 11 dígitos)."
+  if (!cliente.dataNasc) return "Informe a data de nascimento."
+  if (moment(cliente.dataNasc).isAfter(moment(), 'day')) return "A data de nascimento não pode estar no futuro."
+  return null
 }
 
 const Clientes = () => {
@@ -99,20 +115,27 @@ const Clientes = () => {
 
   const handleEditInputChange = (e) => {
     const { name, value } = e.target
+    const valorFormatado = camposComMascara[name] ? camposComMascara[name](value) : value
     setClienteEditando(prev => ({
       ...prev,
-      [name]: value
+      [name]: valorFormatado
     }))
   }
 
   const salvarEdicao = async () => {
+    const erro = validarDadosCliente(clienteEditando)
+    if (erro) {
+      alert(erro)
+      return
+    }
+
     try {
       const atualizado = await clienteService.atualizar(clienteEditando.id, clienteEditando)
       setClientes(clientes.map(c => c.id === atualizado.id ? atualizado : c))
       setModalEditarAberto(false)
       setClienteEditando(null)
     } catch {
-      alert("Não foi possível salvar as alterações. Verifique os dados (data no formato DD/MM/AAAA).")
+      alert("Não foi possível salvar as alterações. Verifique os dados informados.")
     }
   }
 
@@ -123,9 +146,10 @@ const Clientes = () => {
 
   const handleNovoInputChange = (e) => {
     const { name, value } = e.target
+    const valorFormatado = camposComMascara[name] ? camposComMascara[name](value) : value
     setNovoCliente(prev => ({
       ...prev,
-      [name]: value
+      [name]: valorFormatado
     }))
   }
 
@@ -135,13 +159,19 @@ const Clientes = () => {
       return
     }
 
+    const erro = validarDadosCliente(novoCliente)
+    if (erro) {
+      alert(erro)
+      return
+    }
+
     try {
       await clienteService.criar(novoCliente)
       setModalNovoAberto(false)
       setNovoCliente(estadoInicialNovoCliente)
       setRecarregar((n) => n + 1)
     } catch {
-      alert("Não foi possível cadastrar o cliente. Verifique os dados (data no formato DD/MM/AAAA).")
+      alert("Não foi possível cadastrar o cliente. Verifique os dados informados.")
     }
   }
 
@@ -203,7 +233,7 @@ const Clientes = () => {
                   key={cliente.id} 
                   className={`bg-white border-none shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 rounded-xl overflow-hidden group border-t-4 ${cliente.isActive ? 'border-t-[#5B2814]' : 'border-t-gray-400 opacity-75'}`}
                 >
-                  <CardContent className="p-6 flex flex-col h-full justify-between gap-5">
+                  <CardContent className="p-6 flex flex-col  justify-between gap-5">
                     
                     <div className="flex items-center gap-4 border-b border-[#F1E1CA] pb-4">
                       <div className="bg-[#FAF5EE] h-14 w-14 rounded-full flex items-center justify-center text-[#5B2814] shadow-inner shrink-0">
@@ -241,7 +271,14 @@ const Clientes = () => {
                         <div className="bg-[#FAF5EE] p-2 rounded-md text-[#7A4B3A]">
                           <CalendarIcon size={16} />
                         </div>
-                        <span className="text-[14px] font-medium truncate">Nasc: {cliente.dataNasc}</span>
+                        <span className="text-[14px] font-medium truncate">Nasc: {cliente.dataNasc ? moment(cliente.dataNasc).format('DD/MM/YYYY') : '—'}</span>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-[#4A3224]">
+                        <div className="bg-[#FAF5EE] p-2 rounded-md text-[#7A4B3A]">
+                          <IdCard size={16} />
+                        </div>
+                        <span className="text-[14px] font-medium truncate">CPF: {cliente.cpf || '—'}</span>
                       </div>
                     </div>
 
@@ -319,29 +356,46 @@ const Clientes = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <label className="text-[14px] font-medium text-[#4A3224]">Telefone</label>
-                  <Input 
-                    name="telefone"
-                    value={clienteEditando.telefone} 
+                  <label className="text-[14px] font-medium text-[#4A3224]">CPF</label>
+                  <Input
+                    name="cpf"
+                    inputMode="numeric"
+                    placeholder="000.000.000-00"
+                    maxLength={14}
+                    value={clienteEditando.cpf}
                     onChange={handleEditInputChange}
                     className="bg-white border-[#D5B99A] focus:ring-[#5B2814]"
                   />
                 </div>
                 <div className="grid gap-2">
-                  <label className="text-[14px] font-medium text-[#4A3224]">Data Nasc.</label>
-                  <Input 
-                    name="dataNasc"
-                    value={clienteEditando.dataNasc} 
+                  <label className="text-[14px] font-medium text-[#4A3224]">Telefone</label>
+                  <Input
+                    name="telefone"
+                    inputMode="numeric"
+                    placeholder="(00) 00000-0000"
+                    maxLength={15}
+                    value={clienteEditando.telefone}
                     onChange={handleEditInputChange}
                     className="bg-white border-[#D5B99A] focus:ring-[#5B2814]"
                   />
                 </div>
               </div>
               <div className="grid gap-2">
+                <label className="text-[14px] font-medium text-[#4A3224]">Data Nasc.</label>
+                <Input
+                  name="dataNasc"
+                  type="date"
+                  max={moment().format('YYYY-MM-DD')}
+                  value={clienteEditando.dataNasc}
+                  onChange={handleEditInputChange}
+                  className="bg-white border-[#D5B99A] focus:ring-[#5B2814] text-black"
+                />
+              </div>
+              <div className="grid gap-2">
                 <label className="text-[14px] font-medium text-[#4A3224]">Cidade/UF</label>
-                <Input 
+                <Input
                   name="cidade"
-                  value={clienteEditando.cidade} 
+                  value={clienteEditando.cidade}
                   onChange={handleEditInputChange}
                   className="bg-white border-[#D5B99A] focus:ring-[#5B2814]"
                 />
@@ -400,32 +454,47 @@ const Clientes = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <label className="text-[14px] font-medium text-[#4A3224]">Telefone</label>
-                <Input 
-                  name="telefone"
-                  placeholder="(00) 00000-0000"
-                  value={novoCliente.telefone} 
+                <label className="text-[14px] font-medium text-[#4A3224]">CPF *</label>
+                <Input
+                  name="cpf"
+                  inputMode="numeric"
+                  placeholder="000.000.000-00"
+                  maxLength={14}
+                  value={novoCliente.cpf}
                   onChange={handleNovoInputChange}
                   className="bg-white border-[#D5B99A] focus:ring-[#5B2814]"
                 />
               </div>
               <div className="grid gap-2">
-                <label className="text-[14px] font-medium text-[#4A3224]">Data Nasc.</label>
-                <Input 
-                  name="dataNasc"
-                  placeholder="DD/MM/AAAA"
-                  value={novoCliente.dataNasc} 
+                <label className="text-[14px] font-medium text-[#4A3224]">Telefone *</label>
+                <Input
+                  name="telefone"
+                  inputMode="numeric"
+                  placeholder="(00) 00000-0000"
+                  maxLength={15}
+                  value={novoCliente.telefone}
                   onChange={handleNovoInputChange}
                   className="bg-white border-[#D5B99A] focus:ring-[#5B2814]"
                 />
               </div>
             </div>
             <div className="grid gap-2">
+              <label className="text-[14px] font-medium text-[#4A3224]">Data Nasc. *</label>
+              <Input
+                name="dataNasc"
+                type="date"
+                max={moment().format('YYYY-MM-DD')}
+                value={novoCliente.dataNasc}
+                onChange={handleNovoInputChange}
+                className="bg-white border-[#D5B99A] focus:ring-[#5B2814] text-black"
+              />
+            </div>
+            <div className="grid gap-2">
               <label className="text-[14px] font-medium text-[#4A3224]">Cidade/UF</label>
-              <Input 
+              <Input
                 name="cidade"
                 placeholder="Ex: São Paulo, SP"
-                value={novoCliente.cidade} 
+                value={novoCliente.cidade}
                 onChange={handleNovoInputChange}
                 className="bg-white border-[#D5B99A] focus:ring-[#5B2814]"
               />

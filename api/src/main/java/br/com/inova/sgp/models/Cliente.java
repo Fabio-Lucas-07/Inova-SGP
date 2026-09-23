@@ -31,7 +31,10 @@ public class Cliente {
 
     @Column(name = "email", nullable = true)
     private String email;
-    
+
+    @Column(name = "cpf", unique = true)
+    private String cpf;
+
     @Column(name = "tel", nullable = false)
     private String tel;
 

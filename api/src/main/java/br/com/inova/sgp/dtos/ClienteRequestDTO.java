@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Past;
 public record ClienteRequestDTO(
     @NotBlank String name,
     @Email String email,
+    @NotBlank String cpf,
     @NotBlank String tel,
     @NotNull @Past LocalDate birthday,
     @NotBlank String city

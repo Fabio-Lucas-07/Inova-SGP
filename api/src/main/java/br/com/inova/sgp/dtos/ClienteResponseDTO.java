@@ -8,12 +8,13 @@ public record ClienteResponseDTO(
     Long id,
     String name,
     String email,
+    String cpf,
     String tel,
     LocalDate birthday,
     String city,
     Boolean isActive
 ) {
     public static ClienteResponseDTO fromEntity(Cliente c) {
-        return new ClienteResponseDTO(c.getId(), c.getName(), c.getEmail(), c.getTel(), c.getBirthday(), c.getCity(), c.getIsActive());
+        return new ClienteResponseDTO(c.getId(), c.getName(), c.getEmail(), c.getCpf(), c.getTel(), c.getBirthday(), c.getCity(), c.getIsActive());
     }
 }

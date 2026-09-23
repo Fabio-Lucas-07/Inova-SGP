@@ -27,7 +27,7 @@ const Home = () => {
   const proximasConsultas = getProximasConsultas();
 
   return (
-    <div className='w-full min-h-screen flex flex-col bg-[#FDFBF7]'>
+    <div className='w-fulla flex flex-col bg-[#FDFBF7]'>
       
       <div className='bg-gradient-to-r from-[#F1E1CA] to-[#DFC4A4] h-auto w-full p-6 shadow-sm border-b border-[#D5B99A]/30'>
         <h1 className='text-[28px] font-bold text-[#261810] tracking-tight'>Bem Vindo(a)!</h1>

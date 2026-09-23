@@ -1,10 +1,10 @@
-import moment from 'moment'
 import { request, buildQuery, mapPage, type Page, type PageParams } from './api'
 
 interface ClienteApi {
   id: number
   name: string
   email: string | null
+  cpf: string | null
   tel: string
   birthday: string
   city: string
@@ -15,6 +15,7 @@ export interface Cliente {
   id: number
   nome: string
   email: string
+  cpf: string
   telefone: string
   dataNasc: string
   cidade: string
@@ -29,8 +30,9 @@ const fromApi = (c: ClienteApi): Cliente => ({
   id: c.id,
   nome: c.name,
   email: c.email ?? '',
+  cpf: c.cpf ?? '',
   telefone: c.tel,
-  dataNasc: moment(c.birthday, 'YYYY-MM-DD').format('DD/MM/YYYY'),
+  dataNasc: c.birthday,
   cidade: c.city,
   isActive: c.isActive,
 })
@@ -38,8 +40,9 @@ const fromApi = (c: ClienteApi): Cliente => ({
 const toApi = (c: ClienteForm) => ({
   name: c.nome,
   email: c.email || null,
+  cpf: c.cpf,
   tel: c.telefone,
-  birthday: moment(c.dataNasc, 'DD/MM/YYYY').format('YYYY-MM-DD'),
+  birthday: c.dataNasc,
   city: c.cidade,
 })
 

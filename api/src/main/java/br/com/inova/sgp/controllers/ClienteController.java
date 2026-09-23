@@ -72,6 +72,6 @@ public class ClienteController {
     }
 
     private Cliente toEntity(ClienteRequestDTO dto) {
-        return new Cliente(null, dto.name(), dto.email(), dto.tel(), dto.birthday(), dto.city(), true);
+        return new Cliente(null, dto.name(), dto.email(), dto.cpf(), dto.tel(), dto.birthday(), dto.city(), true);
     }
 }
